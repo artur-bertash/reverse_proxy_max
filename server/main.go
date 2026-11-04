@@ -21,9 +21,8 @@ func main() {
 	addr := flag.String("addr", "127.0.0.1:8080", "listen address")
 	flag.Parse()
 
-	http.HandleFunc("/", myHandler)
 	log.Println("Starting server on", *addr)
-	if err := http.ListenAndServe(*addr, nil); err != nil {
+	if err := http.ListenAndServe(*addr, http.HandlerFunc(myHandler)); err != nil {
 		log.Fatal("ListenAndServe:", err)
 	}
 }
