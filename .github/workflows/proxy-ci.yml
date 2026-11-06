@@ -28,7 +28,17 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends sqlite3 jq
 
+      - name: Cache seed
+        id: seed-cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            third_party/twelve-dollar-server-challenge/seed/feed.db
+            third_party/twelve-dollar-server-challenge/seed/tokens.json
+          key: seed-${{ hashFiles('third_party/twelve-dollar-server-challenge/seed/generate.mjs', 'third_party/twelve-dollar-server-challenge/seed/make-seed.sh', 'third_party/twelve-dollar-server-challenge/schema.sql') }}
+
       - name: Generate seed
+        if: steps.seed-cache.outputs.cache-hit != 'true'
         run: bash $CHALLENGE/seed/make-seed.sh
 
       - name: Install backend toolchain (C)
