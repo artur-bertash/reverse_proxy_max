@@ -1,0 +1,8 @@
+[submodule "third_party/twelve-dollar-server-challenge"]
+	path = third_party/twelve-dollar-server-challenge
+	url = https://github.com/arjaythedev/twelve-dollar-server-challenge
+	shallow = true
+[submodule "third_party/million-users-challenge"]
+	path = third_party/million-users-challenge
+	url = https://github.com/arjaythedev/million-users-challenge
+	shallow = true

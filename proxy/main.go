@@ -24,7 +24,7 @@ func parseToUrl(addr string) *url.URL {
 func loadBalancingReverseProxy(target1, target2 *url.URL) *httputil.ReverseProxy {
 	var targetNum = 1
 
-	director := func(req *http.Request) {
+	rewrite := func(req *httputil.ProxyRequest) {
 		var target *url.URL
 		if targetNum == 1 {
 			target = target1
@@ -36,11 +36,10 @@ func loadBalancingReverseProxy(target1, target2 *url.URL) *httputil.ReverseProxy
 			fmt.Println("This requst is forwarder to SECOND ONE")
 		}
 
-		req.URL.Scheme = target.Scheme
-		req.URL.Host = target.Host
-		req.URL.Path = target.Path
+		req.SetURL(target)
+		req.SetXForwarded()
 	}
-	return &httputil.ReverseProxy{Director: director}
+	return &httputil.ReverseProxy{Rewrite: rewrite}
 
 }
 func main() {
