@@ -1,9 +1,19 @@
 name: proxy-ci
 
+# should only run if the proxy etc changed/not other folders
+
 on:
   push:
+    paths:
+      - "proxy/**"
+      - "third_party/**" # a submodule moved to a new commit
+      - ".github/workflows/proxy-ci.yml"
   pull_request:
-  workflow_dispatch:
+    paths:
+      - "proxy/**"
+      - "third_party/**"
+      - ".github/workflows/proxy-ci.yml"
+  workflow_dispatch: # the "Run workflow" button still works any time
 
 env:
   CHALLENGE: third_party/twelve-dollar-server-challenge
