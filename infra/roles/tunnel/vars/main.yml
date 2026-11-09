@@ -1,0 +1,6 @@
+loadgen_host: "{{ groups['loadgen'][0] }}"
+tunnel: "{{ tunnels[inventory_hostname] }}"
+# e.g. permitopen="127.0.0.1:9100",permitopen="127.0.0.1:9091"
+permitted_ports: >-
+  {{ tunnel.ports.values() | map(attribute='remote') | map('string')
+     | map('regex_replace', '^(.*)$', 'permitopen="127.0.0.1:\1"') | join(',') }}

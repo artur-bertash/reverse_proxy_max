@@ -1,0 +1,54 @@
+# Builds the proxy on the laptop for Linux, copies it to the proxy server and restarts it.
+#
+#   cd infra && ansible-playbook deploy-proxy.yml
+
+- name: Deploy the proxy
+  hosts: proxy
+  gather_facts: false
+  vars:
+    build: "{{ playbook_dir }}/.build/proxy" # gitignored
+  tasks:
+    - name: Build proxy/ for linux/amd64 (on the laptop)
+      ansible.builtin.shell: go build -o "{{ build }}" *.go
+      args:
+        chdir: "{{ playbook_dir }}/../proxy"
+      environment: { GOOS: linux, GOARCH: amd64, CGO_ENABLED: "0", GO111MODULE: "off" }
+      delegate_to: localhost
+      run_once: true
+      changed_when: false
+
+    - name: Which commit is being deployed
+      ansible.builtin.shell: >
+        echo "$(git rev-parse --short HEAD)$(git status --porcelain -- proxy/ | grep -q . && echo ', with uncommitted changes')"
+      args:
+        chdir: "{{ playbook_dir }}/.."
+      delegate_to: localhost
+      run_once: true
+      changed_when: false
+      register: commit
+
+    - name: Copy the binary
+      ansible.builtin.copy:
+        src: "{{ build }}"
+        dest: "{{ base_dir }}/proxy"
+        owner: deploy
+        group: deploy
+        mode: "0755"
+
+    - name: Restart the proxy
+      ansible.builtin.systemd:
+        name: proxy
+        state: restarted
+        daemon_reload: true
+
+    - name: Wait until /health answers through the proxy
+      ansible.builtin.uri:
+        url: http://127.0.0.1/health
+      register: health
+      until: health.status == 200
+      retries: 20
+      delay: 1
+
+    - name: Deployed
+      ansible.builtin.debug:
+        msg: "proxy {{ commit.stdout }} running, /health through it: {{ health.status }}"

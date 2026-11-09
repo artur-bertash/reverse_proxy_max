@@ -1,0 +1,100 @@
+# Prometheus + Grafana + node_exporter in Docker Compose on the load generator, 127.0.0.1 only.
+# Grafana from the laptop:  ssh -L 3000:127.0.0.1:3000 rp-loadgen   then http://localhost:3000
+
+# Written before Docker is installed: Ubuntu starts Docker right away, and with its default
+# settings it adds iptables rules, which load the connection-tracking table on the box that
+# opens 40,000+ connections. With these settings, containers can only use the host's network.
+- name: /etc/docker (doesn't exist until Docker is installed)
+  ansible.builtin.file:
+    path: /etc/docker
+    state: directory
+    mode: "0755"
+
+- name: Docker settings (no iptables, no bridge)
+  ansible.builtin.copy:
+    dest: /etc/docker/daemon.json
+    content: '{ "iptables": false, "ip6tables": false, "bridge": "none" }'
+  notify: Restart Docker
+
+- name: Docker and Compose
+  ansible.builtin.apt:
+    name: [docker.io, docker-compose-v2]
+    update_cache: true
+    cache_valid_time: 3600
+    install_recommends: false
+
+- name: Apply Docker settings now
+  ansible.builtin.meta: flush_handlers
+
+- name: Folders
+  ansible.builtin.file:
+    path: "{{ monitoring_dir }}/{{ item }}"
+    state: directory
+    mode: "0755" # Prometheus (user nobody) and Grafana (user 472) read files inside their containers
+  loop: ["", secrets]
+
+- name: Compose file and Grafana (dashboard + provisioning)
+  ansible.builtin.copy:
+    src: "{{ item }}"
+    dest: "{{ monitoring_dir }}/"
+  loop: [docker-compose.yml, grafana]
+  notify: Restart Prometheus and Grafana
+
+- name: Prometheus config (the tunnels' ports)
+  ansible.builtin.template:
+    src: prometheus.yml.j2
+    dest: "{{ monitoring_dir }}/prometheus.yml"
+  notify: Restart Prometheus and Grafana
+
+- name: Grafana admin password (made once, here on the load generator)
+  ansible.builtin.shell: umask 022 && openssl rand -hex 24 > grafana-admin-password
+  args:
+    chdir: "{{ monitoring_dir }}/secrets"
+    creates: grafana-admin-password
+  notify: Restart Prometheus and Grafana
+
+- name: Start the containers
+  ansible.builtin.command: docker compose up -d --remove-orphans
+  args:
+    chdir: "{{ monitoring_dir }}"
+  register: compose
+  changed_when: compose.stderr is search('Creat|Start|Recreat|Pull')
+
+- name: Apply config changes now
+  ansible.builtin.meta: flush_handlers
+
+- name: Wait until Prometheus collects from every server
+  ansible.builtin.uri:
+    url: http://127.0.0.1:9090/api/v1/targets
+  register: targets
+  until: >-
+    targets.json is defined and
+    targets.json.data.activeTargets | length == 4 and
+    targets.json.data.activeTargets | rejectattr('health', 'equalto', 'up') | list | length == 0
+  retries: 12
+  delay: 5
+  failed_when: false
+
+- name: What Prometheus can reach
+  ansible.builtin.debug:
+    msg: "{{ item.labels.job }} on {{ item.labels.server }}: {{ item.health }} {{ item.lastError }}"
+  loop: "{{ targets.json.data.activeTargets }}"
+  loop_control:
+    label: "{{ item.labels.job }}/{{ item.labels.server }}"
+
+- name: Every target is up
+  ansible.builtin.assert:
+    that: targets.json.data.activeTargets | rejectattr('health', 'equalto', 'up') | list | length == 0
+    fail_msg: "Prometheus can't collect from every server; see the errors above."
+    quiet: true
+
+- name: Read loaded kernel modules
+  ansible.builtin.command: lsmod
+  register: modules
+  changed_when: false
+
+- name: No connection tracking on the load generator
+  ansible.builtin.assert:
+    that: "'nf_conntrack' not in modules.stdout"
+    fail_msg: "nf_conntrack is loaded on the load generator (reboot to unload it)"
+    success_msg: "nf_conntrack not loaded. Grafana: ssh -L 3000:127.0.0.1:3000 {{ inventory_hostname }}, then http://localhost:3000 (admin; password: ssh {{ inventory_hostname }} cat {{ monitoring_dir }}/secrets/grafana-admin-password)"

@@ -23,7 +23,16 @@ func parseToUrl(addr string) *url.URL {
 func main() {
 	fromAddr := flag.String("from", "127.0.0.1:9090", "proxy's listening address")
 	toAddr := flag.String("to", "127.0.0.1:3000", "the backend this proxy forwards to")
+	metricsAddr := flag.String("metrics", "", "localhost address for /metrics, e.g. 127.0.0.1:9091 (off if empty)")
+	pprofAddr := flag.String("pprof", "", "localhost address for /debug/pprof, e.g. 127.0.0.1:6060 (off if empty)")
 	flag.Parse()
+
+	if *metricsAddr != "" {
+		go serveMetrics(*metricsAddr)
+	}
+	if *pprofAddr != "" {
+		go servePprof(*pprofAddr)
+	}
 
 	proxy := httputil.NewSingleHostReverseProxy(parseToUrl(*toAddr))
 	log.Println("Starting proxy server on", *fromAddr)

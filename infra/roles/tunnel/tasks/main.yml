@@ -1,0 +1,76 @@
+# An SSH tunnel from the load generator to this server (proxy or backend), so Prometheus can
+# reach the monitoring ports, which listen on 127.0.0.1 only. Nothing is exposed to the internet.
+#
+# Runs on the proxy and backend. Steps marked "load generator" run there (delegate_to), so the
+# key, the trusted host key and the tunnel service for this server are all set up in one place.
+#
+# The tunnel logs in as user "tunnel": no shell, no commands, and it may forward only to the
+# ports listed under `tunnels` in group_vars/all.yml.
+
+- name: User tunnel with its SSH key (load generator)
+  ansible.builtin.user:
+    name: tunnel
+    system: true
+    home: /var/lib/tunnel
+    create_home: true
+    shell: /usr/sbin/nologin
+    generate_ssh_key: true
+    ssh_key_type: ed25519
+    ssh_key_comment: rp-monitoring-tunnel
+  delegate_to: "{{ loadgen_host }}"
+  run_once: true
+  register: loadgen_tunnel_user
+
+- name: User tunnel (this server; no shell)
+  ansible.builtin.user:
+    name: tunnel
+    system: true
+    home: /var/lib/tunnel
+    create_home: true
+    shell: /usr/sbin/nologin
+    password: "*" # no password login; "*" (unlike "!") doesn't mark the account locked for SSH keys
+
+- name: Allow the load generator's key to forward to the monitoring ports, and nothing else
+  ansible.posix.authorized_key:
+    user: tunnel
+    key: "{{ loadgen_tunnel_user.ssh_public_key }}"
+    key_options: "restrict,port-forwarding,{{ permitted_ports }}"
+    exclusive: true
+  when: loadgen_tunnel_user.ssh_public_key is defined # absent only in --check before the first run
+
+- name: Read this server's SSH host key
+  ansible.builtin.slurp:
+    src: /etc/ssh/ssh_host_ed25519_key.pub
+  register: host_key
+
+# Read over Ansible's own SSH connection, so the tunnel never has to trust a key on first sight.
+- name: Trust this server's host key (load generator)
+  ansible.builtin.known_hosts:
+    path: /var/lib/tunnel/.ssh/known_hosts
+    name: "{{ tunnel.ip }}"
+    key: "{{ tunnel.ip }} {{ (host_key.content | b64decode).split()[:2] | join(' ') }}"
+  delegate_to: "{{ loadgen_host }}"
+  register: known_host
+
+- name: known_hosts readable by the tunnel user (load generator)
+  ansible.builtin.file:
+    path: /var/lib/tunnel/.ssh/known_hosts
+    owner: tunnel
+    group: tunnel
+    mode: "0644"
+  delegate_to: "{{ loadgen_host }}"
+
+- name: Tunnel service (load generator)
+  ansible.builtin.template:
+    src: tunnel.service.j2
+    dest: /etc/systemd/system/tunnel-{{ inventory_hostname }}.service
+  delegate_to: "{{ loadgen_host }}"
+  register: unit
+
+- name: Tunnel running (load generator)
+  ansible.builtin.systemd:
+    name: tunnel-{{ inventory_hostname }}
+    enabled: true
+    state: "{{ 'restarted' if (unit.changed or known_host.changed) else 'started' }}"
+    daemon_reload: true
+  delegate_to: "{{ loadgen_host }}"

@@ -1,0 +1,73 @@
+# The load generator task
+# hella tuning here
+- name: Packages (git, and curl/jq/openssl for the 42 tests)
+  ansible.builtin.apt:
+    name: [git, ca-certificates, curl, jq, openssl]
+    update_cache: true
+    cache_valid_time: 3600
+    install_recommends: false
+
+- name: Read installed Go version
+  ansible.builtin.command: /usr/local/go/bin/go version
+  register: go
+  changed_when: false
+  failed_when: false
+
+- name: Go {{ go_version }}
+  when: ("go" + go_version + " ") not in go.stdout
+  block:
+    - name: Remove the old Go
+      ansible.builtin.file:
+        path: /usr/local/go
+        state: absent
+    - name: Download and unpack Go
+      ansible.builtin.unarchive:
+        src: https://go.dev/dl/go{{ go_version }}.linux-amd64.tar.gz
+        dest: /usr/local
+        remote_src: true
+
+- name: mload repo at the pinned commit
+  ansible.builtin.git:
+    repo: "{{ mload_repo }}"
+    dest: "{{ base_dir }}/million-users-challenge"
+    version: "{{ mload_commit }}"
+    force: true
+  register: mload_repo_result
+
+- name: Challenge repo at the pinned commit (the 42 tests)
+  ansible.builtin.git:
+    repo: "{{ challenge_repo }}"
+    dest: "{{ base_dir }}/challenge"
+    version: "{{ challenge_commit }}"
+    force: true
+
+- name: Is mload built?
+  ansible.builtin.stat:
+    path: /usr/local/bin/mload
+  register: mload_binary
+
+- name: Build mload
+  ansible.builtin.command: /usr/local/go/bin/go build -o /usr/local/bin/mload .
+  args:
+    chdir: "{{ base_dir }}/million-users-challenge/bench/mload"
+  when: mload_repo_result.changed or not mload_binary.stat.exists
+
+- name: Tokens for the seed's users
+  ansible.builtin.copy:
+    src: "{{ playbook_dir }}/../third_party/twelve-dollar-server-challenge/seed/tokens.json"
+    dest: "{{ base_dir }}/tokens.json"
+
+- name: Wide local port range
+  ansible.builtin.copy:
+    dest: /etc/sysctl.d/90-loadgen.conf
+    content: "net.ipv4.ip_local_port_range = 1024 65535\n"
+  notify: Apply sysctl
+
+- name: High open-file limit
+  ansible.builtin.copy:
+    dest: /etc/security/limits.d/90-loadgen.conf
+    content: |
+      *    soft nofile 1048576
+      *    hard nofile 1048576
+      root soft nofile 1048576
+      root hard nofile 1048576

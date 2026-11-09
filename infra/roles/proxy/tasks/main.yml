@@ -1,0 +1,35 @@
+# The proxy server: a systemd unit with the challenge's box rules. The binary comes from deploy-proxy.yml.
+- name: Packages (curl for health checks; nothing else runs on this box)
+  ansible.builtin.apt:
+    name: [curl]
+    update_cache: true
+    cache_valid_time: 3600
+    install_recommends: false
+
+- name: systemd unit (deploy user, 65,535 open files, port 80 without root)
+  ansible.builtin.template:
+    src: proxy.service.j2
+    dest: /etc/systemd/system/proxy.service
+  notify: Reload systemd
+
+# The box rules: no firewall, so no connection-tracking table limiting connections.
+- name: Read loaded kernel modules
+  ansible.builtin.command: lsmod
+  register: modules
+  changed_when: false
+
+- name: Read UFW status
+  ansible.builtin.command: ufw status
+  register: ufw
+  changed_when: false
+  failed_when: false
+
+- name: Check the box rules
+  ansible.builtin.assert:
+    that:
+      - "'nf_conntrack' not in modules.stdout"
+      - "'Status: active' not in ufw.stdout"
+    fail_msg: "A firewall or connection tracking is active on the proxy box; the rules require neither."
+    success_msg: >-
+      {{ ansible_processor[2] | default('?') }}, {{ ansible_processor_vcpus }} vCPU,
+      {{ ansible_memtotal_mb }} MB RAM; no firewall, no conntrack

@@ -1,0 +1,65 @@
+# backend tasks install build + expose
+- name: Packages (git, node + sqlite3 for the seed)
+  ansible.builtin.apt:
+    name: [git, ca-certificates, curl, nodejs, sqlite3]
+    update_cache: true
+    cache_valid_time: 3600
+    install_recommends: false
+
+- name: Challenge repo at the pinned commit
+  ansible.builtin.git:
+    repo: "{{ challenge_repo }}"
+    dest: "{{ challenge_dir }}"
+    version: "{{ challenge_commit }}"
+    force: true
+  become: true
+  become_user: deploy
+
+- name: Build the backend (install.sh as root, then build.sh as deploy, profile-guided)
+  ansible.builtin.shell: |
+    set -e
+    bash install.sh >/dev/null
+    sudo -u deploy PGO=1 bash build.sh | tail -2
+    touch {{ base_dir }}/.backend-built-{{ challenge_commit }}
+  args:
+    chdir: "{{ challenge_dir }}/submissions/{{ backend_entry }}"
+    creates: "{{ base_dir }}/.backend-built-{{ challenge_commit }}"
+  notify: Reset backend
+
+- name: Seed database (50k users, 500k posts, 2M likes)
+  ansible.builtin.command: bash seed/make-seed.sh
+  args:
+    chdir: "{{ challenge_dir }}"
+    creates: "{{ challenge_dir }}/seed/feed.db"
+  become: true
+  become_user: deploy
+
+- name: Data folder
+  ansible.builtin.file:
+    path: "{{ base_dir }}/data"
+    state: directory
+    owner: deploy
+    group: deploy
+
+- name: systemd unit
+  ansible.builtin.template:
+    src: backend.service.j2
+    dest: /etc/systemd/system/backend.service
+  notify: [Reload systemd, Reset backend]
+
+- name: backend-reset command
+  ansible.builtin.template:
+    src: backend-reset.j2
+    dest: /usr/local/bin/backend-reset
+    mode: "0755"
+
+- name: Apply changes now
+  ansible.builtin.meta: flush_handlers
+
+- name: Check the backend answers
+  ansible.builtin.uri:
+    url: http://127.0.0.1:3000/health
+  register: health
+  until: health.status == 200
+  retries: 30
+  delay: 1

@@ -1,0 +1,13 @@
+# no variables just hosts
+# its super minimalistic cause variables etc in other folders
+all:
+  children:
+    proxy:
+      hosts:
+        rp-proxy:
+    backend:
+      hosts:
+        rp-backend:
+    loadgen:
+      hosts:
+        rp-loadgen:

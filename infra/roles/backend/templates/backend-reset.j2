@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+# Stop the backend, start it on a fresh copy of the seed, wait until /health answers.
+# (Installed by Ansible: infra/roles/backend.)
+set -euo pipefail
+systemctl stop backend
+rm -f {{ base_dir }}/data/feed.db {{ base_dir }}/data/feed.db-wal {{ base_dir }}/data/feed.db-shm
+cp {{ challenge_dir }}/seed/feed.db {{ base_dir }}/data/feed.db && chown deploy:deploy {{ base_dir }}/data/feed.db
+systemctl start backend
+for i in $(seq 600); do curl -sf -o /dev/null http://127.0.0.1:3000/health && { echo "backend reset: fresh database, healthy"; exit 0; }; sleep 0.1; done
+echo "backend did not become healthy"; journalctl -u backend -n 20 --no-pager; exit 1

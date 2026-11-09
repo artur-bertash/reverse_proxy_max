@@ -1,0 +1,13 @@
+# The deploy user (the challenge's rule: apps run as "deploy", not root) and /opt/rp.
+- name: User deploy
+  ansible.builtin.user:
+    name: deploy
+    shell: /bin/bash
+    create_home: true
+
+- name: "{{ base_dir }} owned by deploy"
+  ansible.builtin.file:
+    path: "{{ base_dir }}"
+    state: directory
+    owner: deploy
+    group: deploy

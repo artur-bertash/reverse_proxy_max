@@ -1,0 +1,9 @@
+- name: Restart Docker
+  ansible.builtin.systemd:
+    name: docker
+    state: restarted
+
+- name: Restart Prometheus and Grafana
+  ansible.builtin.command: docker compose restart prometheus grafana
+  args:
+    chdir: "{{ monitoring_dir }}"

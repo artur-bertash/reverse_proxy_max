@@ -1,0 +1,17 @@
+# Sets up all three servers from fresh Ubuntu 24.04 + roles
+
+- name: Backend server
+  hosts: backend
+  roles: [base, node_exporter, tunnel, backend]
+
+- name: Proxy server (the box under test)
+  hosts: proxy
+  roles: [base, node_exporter, tunnel, proxy]
+
+# The proxy's systemd unit uses -metrics and -pprof, which only the current build understands.
+- name: Deploy the current proxy build
+  ansible.builtin.import_playbook: deploy-proxy.yml
+
+- name: Load generator, with Prometheus and Grafana
+  hosts: loadgen
+  roles: [loadgen, monitoring]

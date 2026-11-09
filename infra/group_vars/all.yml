@@ -1,0 +1,29 @@
+# Settings shared by all roles.
+base_dir: /opt/rp
+
+# Pinned to the same commits as the git submodules in third_party/.
+challenge_repo: https://github.com/arjaythedev/twelve-dollar-server-challenge
+challenge_commit: b10871801b4ad099d0f2d33d18a00777dfc37166
+mload_repo: https://github.com/arjaythedev/million-users-challenge
+mload_commit: 0dc400c08b0125082b9fba1b8d14609e544ebad0
+
+backend_entry: c-iouring-pavlyhalim # from the $12 Server Challenge
+go_version: "1.27.1"                # on the load generator, to build mload
+node_exporter_version: "1.9.1"
+
+# Prometheus on the load generator reaches the proxy's and backend's monitoring ports (127.0.0.1
+# only) through SSH tunnels (roles/tunnel). local = port on the load generator, remote = on the server.
+tunnels:
+  rp-proxy:
+    ip: "{{ proxy_ip }}"
+    ports:
+      node_exporter: { local: 19100, remote: 9100 }
+      proxy_metrics: { local: 19091, remote: 9091 }
+  rp-backend:
+    ip: "{{ backend_ip }}"
+    ports:
+      node_exporter: { local: 29100, remote: 9100 }
+
+# The servers' addresses, read from ~/.ssh/config on the laptop (`ssh -G` prints the settings).
+proxy_ip: "{{ lookup('ansible.builtin.pipe', 'ssh -G rp-proxy') | regex_search('(?m)^hostname (\\S+)$', '\\1') | first }}"
+backend_ip: "{{ lookup('ansible.builtin.pipe', 'ssh -G rp-backend') | regex_search('(?m)^hostname (\\S+)$', '\\1') | first }}"

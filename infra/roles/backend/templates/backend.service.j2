@@ -1,0 +1,15 @@
+[Unit]
+Description=Backend ({{ backend_entry }}) for the reverse proxy challenge
+After=network.target
+
+[Service]
+User=deploy
+WorkingDirectory={{ challenge_dir }}/submissions/{{ backend_entry }}
+Environment=SQLITE_PATH={{ base_dir }}/data/feed.db JWT_SECRET=twelve-dollar-challenge HOST=0.0.0.0 PORT=3000
+ExecStart=/bin/bash start.sh
+LimitNOFILE=65535
+LimitMEMLOCK=infinity
+Restart=no
+
+[Install]
+WantedBy=multi-user.target

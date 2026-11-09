@@ -1,0 +1,21 @@
+[Unit]
+Description=SSH tunnel to {{ inventory_hostname }}'s monitoring ports (for Prometheus)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+User=tunnel
+# -N: forward only, run nothing. ServerAlive: notice a dead connection within ~30 s (10 s x 3),
+# so a short stall under load doesn't drop it. systemd restarts it if it exits.
+ExecStart=/usr/bin/ssh -N -T \
+  -o BatchMode=yes -o StrictHostKeyChecking=yes -o ExitOnForwardFailure=yes \
+  -o ServerAliveInterval=10 -o ServerAliveCountMax=3 \
+{% for name, port in tunnel.ports.items() %}
+  -L 127.0.0.1:{{ port.local }}:127.0.0.1:{{ port.remote }} \
+{% endfor %}
+  tunnel@{{ tunnel.ip }}
+Restart=always
+RestartSec=2
+
+[Install]
+WantedBy=multi-user.target

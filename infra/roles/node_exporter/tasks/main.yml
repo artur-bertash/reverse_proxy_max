@@ -1,0 +1,48 @@
+# node_exporter on the proxy and backend boxes: a single binary run by systemd, on 127.0.0.1:9100.
+# Prometheus reaches it through the SSH tunnel (roles/tunnel). No Docker on these boxes: Docker's
+# networking would load the kernel's connection-tracking table, the limit the no-firewall rule avoids.
+- name: User node_exporter
+  ansible.builtin.user:
+    name: node_exporter
+    system: true
+    create_home: false
+    shell: /usr/sbin/nologin
+
+- name: Is node_exporter {{ node_exporter_version }} installed?
+  ansible.builtin.stat:
+    path: "{{ node_exporter_dir }}/node_exporter"
+  register: installed
+
+- name: Download node_exporter {{ node_exporter_version }} (checksum verified)
+  when: not installed.stat.exists
+  block:
+    - name: Download
+      ansible.builtin.get_url:
+        url: "{{ node_exporter_url }}/node_exporter-{{ node_exporter_version }}.linux-amd64.tar.gz"
+        checksum: "sha256:{{ node_exporter_url }}/sha256sums.txt"
+        dest: /tmp/node_exporter.tar.gz
+    - name: Unpack
+      ansible.builtin.unarchive:
+        src: /tmp/node_exporter.tar.gz
+        dest: /opt
+        remote_src: true
+
+- name: /usr/local/bin/node_exporter → this version
+  ansible.builtin.file:
+    src: "{{ node_exporter_dir }}/node_exporter"
+    dest: /usr/local/bin/node_exporter
+    state: link
+  notify: Restart node_exporter
+
+- name: systemd unit
+  ansible.builtin.template:
+    src: node_exporter.service.j2
+    dest: /etc/systemd/system/node_exporter.service
+  notify: Restart node_exporter
+
+- name: Start at boot
+  ansible.builtin.systemd:
+    name: node_exporter
+    enabled: true
+    state: started
+    daemon_reload: true

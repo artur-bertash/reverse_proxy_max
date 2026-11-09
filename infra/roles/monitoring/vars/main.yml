@@ -1,0 +1,1 @@
+monitoring_dir: "{{ base_dir }}/monitoring"
