@@ -71,3 +71,16 @@
       *    hard nofile 1048576
       root soft nofile 1048576
       root hard nofile 1048576
+
+# node_exporter reads this dir so  mload numbers end up in prometheeus durring the run
+- name: textfile dir for node_exporter
+  ansible.builtin.file:
+    path: /var/lib/node_exporter/textfile
+    state: directory
+    mode: "0755"
+
+- name: mload-to-prom script (cmd/capacity pipes mload thru it)
+  ansible.builtin.copy:
+    src: mload-to-prom
+    dest: /usr/local/bin/mload-to-prom
+    mode: "0755"

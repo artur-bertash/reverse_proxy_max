@@ -8,7 +8,7 @@
     "from": "now-30m",
     "to": "now"
   },
-  "refresh": "10s",
+  "refresh": "",
   "timezone": "browser",
   "tags": [
     "proxy"
@@ -28,25 +28,474 @@
         "type": "dashboard"
       },
       {
-        "datasource": {
-          "type": "grafana",
-          "uid": "-- Grafana --"
-        },
-        "enable": true,
-        "iconColor": "orange",
         "name": "Probes",
-        "target": {
-          "type": "tags",
-          "tags": [
-            "probe"
-          ],
-          "matchAny": true,
-          "limit": 500
-        }
+        "enable": true,
+        "iconColor": "rgba(138, 184, 255, 0.08)",
+        "datasource": {
+          "type": "prometheus",
+          "uid": "prometheus"
+        },
+        "expr": "mload_probe",
+        "step": "5s",
+        "titleFormat": "{{entry}}: {{label}} {{users}} users",
+        "tagKeys": "label"
+      },
+      {
+        "name": "Failed probes",
+        "enable": true,
+        "iconColor": "red",
+        "datasource": {
+          "type": "prometheus",
+          "uid": "prometheus"
+        },
+        "expr": "capacity_probe_result{verdict!=\"pass\"}",
+        "step": "5s",
+        "useValueForTime": true,
+        "titleFormat": "{{label}} {{users}} users: {{verdict}}",
+        "textFormat": "proxy {{proxy}}, p95 {{p95_ms}} ms, errors {{err_pct}}%",
+        "tagKeys": "verdict"
+      },
+      {
+        "name": "Passed probes",
+        "enable": true,
+        "iconColor": "green",
+        "datasource": {
+          "type": "prometheus",
+          "uid": "prometheus"
+        },
+        "expr": "capacity_probe_result{verdict=\"pass\"}",
+        "step": "5s",
+        "useValueForTime": true,
+        "titleFormat": "{{label}} {{users}} users: {{verdict}}",
+        "textFormat": "proxy {{proxy}}, p95 {{p95_ms}} ms, errors {{err_pct}}%",
+        "tagKeys": "verdict"
       }
     ]
   },
   "panels": [
+    {
+      "type": "row",
+      "id": 100,
+      "title": "Runs",
+      "collapsed": false,
+      "panels": [],
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 0
+      }
+    },
+    {
+      "type": "table",
+      "id": 101,
+      "title": "Runs (click a version to open its run)",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "description": "every saved run in results/, doesnt care about the time picker",
+      "gridPos": {
+        "h": 5,
+        "w": 24,
+        "x": 0,
+        "y": 1
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "max by (entry) (last_over_time(capacity_run_start_ms[100y] @ 4102444800)) - 30000",
+          "instant": true,
+          "range": false,
+          "format": "table"
+        },
+        {
+          "refId": "B",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "max by (entry) (last_over_time(capacity_run_end_ms[100y] @ 4102444800)) + 30000",
+          "instant": true,
+          "range": false,
+          "format": "table"
+        },
+        {
+          "refId": "C",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "max by (entry) (last_over_time(capacity_score_users[100y] @ 4102444800))",
+          "instant": true,
+          "range": false,
+          "format": "table"
+        },
+        {
+          "refId": "D",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "max by (entry) (last_over_time(capacity_run_start_ms[100y] @ 4102444800))",
+          "instant": true,
+          "range": false,
+          "format": "table"
+        },
+        {
+          "refId": "E",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "max by (entry) (last_over_time(capacity_run_end_ms[100y] @ 4102444800))",
+          "instant": true,
+          "range": false,
+          "format": "table"
+        }
+      ],
+      "transformations": [
+        {
+          "id": "merge",
+          "options": {}
+        },
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "Time": true
+            },
+            "indexByName": {
+              "entry": 0,
+              "Value #C": 1,
+              "Value #D": 2,
+              "Value #E": 3,
+              "Value #A": 4,
+              "Value #B": 5
+            },
+            "renameByName": {
+              "entry": "version",
+              "Value #C": "score (users, 0 = stopped early)",
+              "Value #D": "start",
+              "Value #E": "end",
+              "Value #A": "start_ms",
+              "Value #B": "end_ms"
+            }
+          }
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "version"
+            },
+            "properties": [
+              {
+                "id": "links",
+                "value": [
+                  {
+                    "title": "Open this run",
+                    "url": "/d/proxy-capacity/proxy-capacity?from=${__data.fields[\"start_ms\"]}&to=${__data.fields[\"end_ms\"]}"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": "^(start|end)$"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "dateTimeAsIso"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "start_ms"
+            },
+            "properties": [
+              {
+                "id": "custom.hidden",
+                "value": true
+              },
+              {
+                "id": "unit",
+                "value": "none"
+              },
+              {
+                "id": "decimals",
+                "value": 0
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "end_ms"
+            },
+            "properties": [
+              {
+                "id": "custom.hidden",
+                "value": true
+              },
+              {
+                "id": "unit",
+                "value": "none"
+              },
+              {
+                "id": "decimals",
+                "value": 0
+              }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "showHeader": true,
+        "sortBy": [
+          {
+            "displayName": "start",
+            "desc": true
+          }
+        ]
+      }
+    },
+    {
+      "type": "row",
+      "id": 102,
+      "title": "Load results (mload, every 5 s)",
+      "collapsed": false,
+      "panels": [],
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 6
+      }
+    },
+    {
+      "type": "timeseries",
+      "id": 103,
+      "title": "Users and connections",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 7
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "custom": {
+            "lineWidth": 1,
+            "fillOpacity": 10,
+            "showPoints": "never"
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "mload_users",
+          "legendFormat": "{{entry}} users"
+        },
+        {
+          "refId": "B",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "mload_conns",
+          "legendFormat": "{{entry}} connections"
+        }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "id": 104,
+      "title": "Requests per second",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 7
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "reqps",
+          "custom": {
+            "lineWidth": 1,
+            "fillOpacity": 10,
+            "showPoints": "never"
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "mload_rps",
+          "legendFormat": "{{entry}}"
+        }
+      ],
+      "description": "includes the failed ones too"
+    },
+    {
+      "type": "timeseries",
+      "id": 105,
+      "title": "Latency of successful requests (log scale; limit: p95 < 500 ms, p99 < 1 s)",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 15
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ms",
+          "custom": {
+            "lineWidth": 1,
+            "fillOpacity": 10,
+            "showPoints": "never",
+            "scaleDistribution": {
+              "type": "log",
+              "log": 10
+            }
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "mload_p95_ms",
+          "legendFormat": "{{entry}} p95"
+        },
+        {
+          "refId": "B",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "mload_p99_ms",
+          "legendFormat": "{{entry}} p99"
+        }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "id": 106,
+      "title": "Failed requests per 5 s",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 15
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "custom": {
+            "lineWidth": 1,
+            "fillOpacity": 10,
+            "showPoints": "never"
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "mload_fails",
+          "legendFormat": "{{entry}}"
+        }
+      ]
+    },
     {
       "type": "row",
       "title": "Proxy box",
@@ -56,7 +505,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 0
+        "y": 23
       }
     },
     {
@@ -72,7 +521,7 @@
         "h": 8,
         "w": 12,
         "x": 0,
-        "y": 1
+        "y": 24
       },
       "fieldConfig": {
         "defaults": {
@@ -124,7 +573,7 @@
         "h": 8,
         "w": 12,
         "x": 12,
-        "y": 1
+        "y": 24
       },
       "fieldConfig": {
         "defaults": {
@@ -193,7 +642,7 @@
         "h": 8,
         "w": 12,
         "x": 0,
-        "y": 9
+        "y": 32
       },
       "fieldConfig": {
         "defaults": {
@@ -254,7 +703,7 @@
         "h": 8,
         "w": 12,
         "x": 12,
-        "y": 9
+        "y": 32
       },
       "fieldConfig": {
         "defaults": {
@@ -310,7 +759,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 17
+        "y": 40
       }
     },
     {
@@ -326,7 +775,7 @@
         "h": 8,
         "w": 12,
         "x": 0,
-        "y": 18
+        "y": 41
       },
       "fieldConfig": {
         "defaults": {
@@ -413,7 +862,7 @@
         "h": 8,
         "w": 12,
         "x": 12,
-        "y": 18
+        "y": 41
       },
       "fieldConfig": {
         "defaults": {
@@ -464,7 +913,7 @@
         "h": 8,
         "w": 12,
         "x": 0,
-        "y": 26
+        "y": 49
       },
       "fieldConfig": {
         "defaults": {
@@ -524,7 +973,7 @@
         "h": 8,
         "w": 12,
         "x": 12,
-        "y": 26
+        "y": 49
       },
       "fieldConfig": {
         "defaults": {
@@ -580,7 +1029,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 34
+        "y": 57
       }
     },
     {
@@ -596,7 +1045,7 @@
         "h": 8,
         "w": 12,
         "x": 0,
-        "y": 35
+        "y": 58
       },
       "fieldConfig": {
         "defaults": {
@@ -683,7 +1132,7 @@
         "h": 8,
         "w": 12,
         "x": 12,
-        "y": 35
+        "y": 58
       },
       "fieldConfig": {
         "defaults": {
@@ -761,7 +1210,7 @@
         "h": 8,
         "w": 12,
         "x": 0,
-        "y": 43
+        "y": 66
       },
       "fieldConfig": {
         "defaults": {
@@ -821,7 +1270,7 @@
         "h": 8,
         "w": 12,
         "x": 12,
-        "y": 43
+        "y": 66
       },
       "fieldConfig": {
         "defaults": {
@@ -868,7 +1317,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 51
+        "y": 74
       }
     },
     {
@@ -884,7 +1333,7 @@
         "h": 8,
         "w": 12,
         "x": 0,
-        "y": 52
+        "y": 75
       },
       "fieldConfig": {
         "defaults": {
@@ -936,7 +1385,7 @@
         "h": 8,
         "w": 12,
         "x": 12,
-        "y": 52
+        "y": 75
       },
       "fieldConfig": {
         "defaults": {

@@ -10,11 +10,19 @@ scrape_configs:
         labels: { server: proxy }
       - targets: ["127.0.0.1:{{ tunnels['rp-backend'].ports.node_exporter.local }}"]
         labels: { server: backend }
+    metric_relabel_configs: # dont store hostname/mac/bios, snapshots get pushed to github
+      - source_labels: [__name__]
+        regex: node_uname_info|node_network_info|node_dmi_info
+        action: drop
 
   - job_name: node-loadgen
     static_configs:
       - targets: ["127.0.0.1:9100"]
         labels: { server: loadgen }
+    metric_relabel_configs: # dont store hostname/mac/bios, snapshots get pushed to github
+      - source_labels: [__name__]
+        regex: node_uname_info|node_network_info|node_dmi_info
+        action: drop
 
   - job_name: proxy
     static_configs:

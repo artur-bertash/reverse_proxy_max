@@ -4,7 +4,7 @@ datasources:
     uid: prometheus
     type: prometheus
     access: proxy
-    url: http://127.0.0.1:9090
+    url: ${PROMETHEUS_URL} # set in the compose file, different for live vs results viewer
     isDefault: true
     jsonData:
       timeInterval: 5s

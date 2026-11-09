@@ -17,6 +17,7 @@ services:
       - --storage.tsdb.path=/prometheus
       - --storage.tsdb.retention.time=60d
       - --web.listen-address=127.0.0.1:9090
+      - --web.enable-admin-api # needed for the snapshot at the end of a run
     volumes:
       - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro # from templates/prometheus.yml.j2
       - prometheus-data:/prometheus
@@ -28,6 +29,7 @@ services:
     environment:
       GF_SERVER_HTTP_ADDR: 127.0.0.1
       GF_SERVER_HTTP_PORT: "3000"
+      PROMETHEUS_URL: http://127.0.0.1:9090 # datasource reads this, results/ compose sets its own
       GF_SECURITY_ADMIN_USER: admin
       GF_SECURITY_ADMIN_PASSWORD__FILE: /etc/grafana/secrets/grafana-admin-password
       GF_ANALYTICS_REPORTING_ENABLED: "false"
@@ -47,6 +49,8 @@ services:
     command:
       - --path.rootfs=/host
       - --web.listen-address=127.0.0.1:9100
+      # picks up mload.prom + capacity.prom (mload stats, run marker)
+      - --collector.textfile.directory=/host/var/lib/node_exporter/textfile
     volumes:
       - /:/host:ro,rslave
 

@@ -1,0 +1,23 @@
+#!/bin/sh
+# mload ... | mload-to-prom <entry> <label> <users>
+#
+# Passes mload's output through unchanged, and after every "t= ..." line (every 5 s) rewrites
+# mload.prom for node_exporter's textfile collector, so Prometheus scrapes mload's numbers like any
+# other metric and they end up in the run's snapshot. When mload exits, the file is removed and the
+# series end. Used by cmd/capacity; installed by infra/roles/loadgen.
+dir=/var/lib/node_exporter/textfile
+awk -v entry="$1" -v label="$2" -v users="$3" -v out="$dir/mload.prom" '
+  { print; fflush() }    # mload output keeps flowing to cmd/capacity (mload.txt)
+  /^t=/ {
+    for (i = 1; i <= NF; i++) { split($i, kv, "="); v[kv[1]] = kv[2] + 0 }   # "p95=0.6ms" -> v["p95"] = 0.6
+    l = sprintf("{entry=\"%s\"}", entry)
+    tmp = out ".tmp"
+    printf "mload_users%s %s\nmload_conns%s %s\n", l, v["users"], l, v["conns"] > tmp
+    printf "mload_rps%s %s\nmload_fails%s %s\n", l, v["req/s"], l, v["fails"] > tmp
+    if (v["p95"] > 0) printf "mload_p95_ms%s %s\nmload_p99_ms%s %s\n", l, v["p95"], l, v["p99"] > tmp   # 0 = no successful requests
+    printf "mload_probe{entry=\"%s\",label=\"%s\",users=\"%s\"} 1\n", entry, label, users > tmp
+    close(tmp)
+    system("mv " tmp " " out)    # swap in whole, so node_exporter never reads half a file
+  }
+  END { system("rm -f " out) }
+'
