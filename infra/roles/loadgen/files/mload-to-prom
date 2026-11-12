@@ -14,6 +14,7 @@ awk -v entry="$1" -v label="$2" -v users="$3" -v out="$dir/mload.prom" '
     tmp = out ".tmp"
     printf "mload_users%s %s\nmload_conns%s %s\n", l, v["users"], l, v["conns"] > tmp
     printf "mload_rps%s %s\nmload_fails%s %s\n", l, v["req/s"], l, v["fails"] > tmp
+    printf "mload_rss_mb%s %s\n", l, v["rss"] > tmp    # mload own memory in MiB (validity: is the loadgen ok?)
     if (v["p95"] > 0) printf "mload_p95_ms%s %s\nmload_p99_ms%s %s\n", l, v["p95"], l, v["p99"] > tmp   # 0 = no successful requests
     printf "mload_probe{entry=\"%s\",label=\"%s\",users=\"%s\"} 1\n", entry, label, users > tmp
     close(tmp)
