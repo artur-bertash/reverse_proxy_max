@@ -1,0 +1,4 @@
+# only what results/*.Dockerfile need, keeps the build context small
+*
+!results
+!infra/roles/monitoring/files/grafana
