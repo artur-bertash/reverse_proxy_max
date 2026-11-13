@@ -1,0 +1,28 @@
+20:38:04 wiping Prometheus on the load generator
+20:38:05 waiting until Prometheus collects from all servers
+20:38:18 pausing background package services on the proxy server
+20:38:19 warm-up (not scored)
+20:38:19 probe: 1000 users (ramp 1m0s, hold 2m0s)
+20:41:36 no data in Prometheus for: max_over_time(process_resident_memory_bytes{job="proxy"}[181s])
+20:41:47   → pass (proxy ok): 91 req/s, p95 0.9 ms, p99 1.0 ms, errors 0.00%, proxy CPU 4%, proxy RAM 0 MB, sockets 726, TIME_WAIT 1864, load generator CPU 2% 
+20:41:47 probe: 2500 users (ramp 1m0s, hold 2m0s)
+20:45:07 no data in Prometheus for: max_over_time(process_resident_memory_bytes{job="proxy"}[181s])
+20:45:17   → fail (proxy ok): 228 req/s, p95 0.7 ms, p99 0.9 ms, errors 7.09%, proxy CPU 7%, proxy RAM 0 MB, sockets 734, TIME_WAIT 5164, load generator CPU 3% EOF 2903, http 504 1
+20:45:17 probe: 1250 users (ramp 1m0s, hold 2m0s)
+20:48:37 no data in Prometheus for: max_over_time(process_resident_memory_bytes{job="proxy"}[183s])
+20:48:48   → fail (proxy ok): 114 req/s, p95 0.8 ms, p99 0.9 ms, errors 2.34%, proxy CPU 4%, proxy RAM 0 MB, sockets 731, TIME_WAIT 3175, load generator CPU 2% EOF 481, reset 1
+20:48:48 probe: 625 users (ramp 1m0s, hold 2m0s)
+20:52:06 no data in Prometheus for: max_over_time(process_resident_memory_bytes{job="proxy"}[181s])
+20:52:15   → pass (proxy ok): 57 req/s, p95 0.8 ms, p99 1.0 ms, errors 0.00%, proxy CPU 3%, proxy RAM 0 MB, sockets 635, TIME_WAIT 1432, load generator CPU 1% 
+20:52:15 probe: 750 users (ramp 1m0s, hold 2m0s)
+20:55:35 no data in Prometheus for: max_over_time(process_resident_memory_bytes{job="proxy"}[181s])
+20:55:44   → pass (proxy ok): 68 req/s, p95 0.8 ms, p99 1.0 ms, errors 0.00%, proxy CPU 3%, proxy RAM 0 MB, sockets 726, TIME_WAIT 1390, load generator CPU 1% 
+20:55:44 probe: 1000 users (ramp 1m0s, hold 2m0s)
+20:59:06 no data in Prometheus for: max_over_time(process_resident_memory_bytes{job="proxy"}[183s])
+20:59:18   → pass (proxy ok): 91 req/s, p95 0.8 ms, p99 0.9 ms, errors 0.03%, proxy CPU 4%, proxy RAM 0 MB, sockets 731, TIME_WAIT 1686, load generator CPU 2% EOF 4, timeout 1
+20:59:18 probe: 1000 users (ramp 1m0s, hold 5m0s)
+21:33:02 no data in Prometheus for: max_over_time(process_resident_memory_bytes{job="proxy"}[451s])
+21:49:13   → pass (proxy ok): 98 req/s, p95 0.8 ms, p99 1.0 ms, errors 0.01%, proxy CPU 2%, proxy RAM 0 MB, sockets 10, TIME_WAIT 2, load generator CPU 1% EOF 3, timeout 1
+21:49:26 saving the Prometheus snapshot
+21:49:28 snapshot saved: 1 blocks in results/nginx-stock/prometheus
+21:49:29 SCORE: 1000 users (5-minute hold passed). Results in results/nginx-stock

@@ -1,0 +1,40 @@
+21:50:13 wiping Prometheus on the load generator
+21:50:15 waiting until Prometheus collects from all servers
+21:50:28 pausing background package services on the proxy server
+21:50:29 warm-up (not scored)
+21:50:29 probe: 1000 users (ramp 1m0s, hold 2m0s)
+21:53:46 no data in Prometheus for: max_over_time(process_resident_memory_bytes{job="proxy"}[181s])
+21:53:56   → pass (proxy ok): 91 req/s, p95 0.8 ms, p99 1.0 ms, errors 0.00%, proxy CPU 4%, proxy RAM 0 MB, sockets 1014, TIME_WAIT 7, load generator CPU 1% 
+21:53:56 probe: 2500 users (ramp 1m0s, hold 2m0s)
+21:57:18 no data in Prometheus for: max_over_time(process_resident_memory_bytes{job="proxy"}[181s])
+21:57:27   → pass (proxy ok): 228 req/s, p95 0.7 ms, p99 0.9 ms, errors 0.00%, proxy CPU 7%, proxy RAM 0 MB, sockets 2531, TIME_WAIT 0, load generator CPU 2% 
+21:57:27 probe: 5000 users (ramp 1m0s, hold 2m0s)
+22:00:48 no data in Prometheus for: max_over_time(process_resident_memory_bytes{job="proxy"}[183s])
+22:00:59   → pass (proxy ok): 456 req/s, p95 0.6 ms, p99 0.8 ms, errors 0.00%, proxy CPU 12%, proxy RAM 0 MB, sockets 5020, TIME_WAIT 0, load generator CPU 3% 
+22:00:59 probe: 10000 users (ramp 1m0s, hold 2m0s)
+22:04:18 no data in Prometheus for: max_over_time(process_resident_memory_bytes{job="proxy"}[182s])
+22:04:30   → pass (proxy ok): 910 req/s, p95 0.7 ms, p99 1.3 ms, errors 0.00%, proxy CPU 21%, proxy RAM 0 MB, sockets 10027, TIME_WAIT 9, load generator CPU 5% 
+22:04:30 probe: 20000 users (ramp 1m0s, hold 2m0s)
+22:07:48 no data in Prometheus for: max_over_time(process_resident_memory_bytes{job="proxy"}[181s])
+22:07:57   → pass (proxy ok): 1821 req/s, p95 1.1 ms, p99 15.0 ms, errors 0.00%, proxy CPU 35%, proxy RAM 0 MB, sockets 20044, TIME_WAIT 794, load generator CPU 7% 
+22:07:57 probe: 40000 users (ramp 1m0s, hold 2m0s)
+22:11:15 no data in Prometheus for: max_over_time(process_resident_memory_bytes{job="proxy"}[181s])
+22:11:26   → fail (proxy oom-kill): 2995 req/s, p95 15906.3 ms, p99 23215.7 ms, errors 75.02%, proxy CPU 35%, proxy RAM 0 MB, sockets 48181, TIME_WAIT 8192, load generator CPU 18% refused 377927, timeout 21464, reset 4265, EOF 777
+22:11:26 probe: 30000 users (ramp 1m0s, hold 2m0s)
+22:14:45 no data in Prometheus for: max_over_time(process_resident_memory_bytes{job="proxy"}[182s])
+22:14:55   → fail (proxy ok): 2698 req/s, p95 720.5 ms, p99 1094.3 ms, errors 0.00%, proxy CPU 60%, proxy RAM 0 MB, sockets 32987, TIME_WAIT 8192, load generator CPU 10% 
+22:14:55 probe: 25000 users (ramp 1m0s, hold 2m0s)
+22:18:16 no data in Prometheus for: max_over_time(process_resident_memory_bytes{job="proxy"}[179s])
+22:18:28   → pass (proxy ok): 2272 req/s, p95 143.7 ms, p99 352.0 ms, errors 0.00%, proxy CPU 45%, proxy RAM 0 MB, sockets 25629, TIME_WAIT 8192, load generator CPU 17% 
+22:18:28 probe: 27500 users (ramp 1m0s, hold 2m0s)
+22:21:47 no data in Prometheus for: max_over_time(process_resident_memory_bytes{job="proxy"}[182s])
+22:21:57   → pass (proxy ok): 2492 req/s, p95 384.9 ms, p99 524.0 ms, errors 0.00%, proxy CPU 50%, proxy RAM 0 MB, sockets 29334, TIME_WAIT 8192, load generator CPU 9% 
+22:21:57 probe: 28750 users (ramp 1m0s, hold 2m0s)
+22:25:16 no data in Prometheus for: max_over_time(process_resident_memory_bytes{job="proxy"}[182s])
+22:25:27   → pass (proxy ok): 2606 req/s, p95 373.6 ms, p99 529.2 ms, errors 0.00%, proxy CPU 52%, proxy RAM 0 MB, sockets 30332, TIME_WAIT 8192, load generator CPU 17% 
+22:25:27 probe: 28750 users (ramp 1m0s, hold 5m0s)
+22:31:45 no data in Prometheus for: max_over_time(process_resident_memory_bytes{job="proxy"}[361s])
+22:31:55   → pass (proxy ok): 2820 req/s, p95 341.6 ms, p99 479.1 ms, errors 0.00%, proxy CPU 52%, proxy RAM 0 MB, sockets 29951, TIME_WAIT 8192, load generator CPU 9% 
+22:32:09 saving the Prometheus snapshot
+22:32:12 snapshot saved: 1 blocks in results/caddy-stock/prometheus
+22:32:13 SCORE: 28750 users (5-minute hold passed). Results in results/caddy-stock

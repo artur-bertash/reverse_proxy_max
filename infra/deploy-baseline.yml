@@ -1,0 +1,121 @@
+# Baselines: a stock web server as the proxy under test, run by our own proxy unit, so it gets the
+# same box rules as every entry (deploy user, 65,535 open files, port 80 without root).
+#
+#   cd infra && ansible-playbook deploy-baseline.yml -e baseline=nginx-stock
+#   cd .. && go run cmd/capacity/main.go -entry nginx-stock -proxy-metrics=false
+#
+# One file per baseline in baselines/<name>.yml says what to install and how to run it; this playbook
+# does the same steps for all of them. "Stock" = the Ubuntu 24.04 package's config unchanged, plus
+# only what's needed to send / to the backend. Go back to the Go proxy with deploy-proxy.yml (it
+# removes the drop-in).
+#
+# Adding a baseline: copy baselines/nginx-stock.yml and change the package, its config lines and the
+# command that runs it in the foreground.
+
+- name: Run a baseline as the proxy under test
+  hosts: proxy
+  gather_facts: false
+  become: true
+  vars_files:
+    - "baselines/{{ baseline }}.yml"
+  tasks:
+    # apt would start the package's own service on install, which can't get port 80 while the proxy
+    # runs and makes dpkg fail. policy-rc.d tells apt not to start any service.
+    - name: Don't let apt start services during the install
+      ansible.builtin.copy:
+        dest: /usr/sbin/policy-rc.d
+        content: "#!/bin/sh\nexit 101\n"
+        mode: "0755"
+
+    - name: Install from Ubuntu's repository
+      ansible.builtin.apt:
+        name: "{{ packages }}"
+        update_cache: true
+        cache_valid_time: 3600
+        install_recommends: false
+
+    - name: Allow apt to start services again
+      ansible.builtin.file:
+        path: /usr/sbin/policy-rc.d
+        state: absent
+
+    # The packages' own units use their own limits (Caddy's raises open files to 1,048,576).
+    - name: The package's own unit never runs
+      ansible.builtin.systemd:
+        name: "{{ package_unit }}"
+        state: stopped
+        enabled: false
+        masked: true
+
+    - name: Remove the package's default site
+      ansible.builtin.file:
+        path: "{{ item }}"
+        state: absent
+      loop: "{{ remove | default([]) }}"
+
+    - name: The added config (proxy / to the backend)
+      ansible.builtin.copy:
+        dest: "{{ item.dest }}"
+        content: "{{ item.content }}"
+      loop: "{{ files | default([]) }}"
+      loop_control: { label: "{{ item.dest }}" }
+
+    - name: Links (enable sites)
+      ansible.builtin.file:
+        src: "{{ item.src }}"
+        dest: "{{ item.dest }}"
+        state: link
+      loop: "{{ links | default([]) }}"
+
+    - name: Setup commands (e.g. enable modules)
+      ansible.builtin.command: "{{ item }}"
+      loop: "{{ setup | default([]) }}"
+      changed_when: false
+
+    - name: Check the config
+      ansible.builtin.shell: "{{ check }}"
+      changed_when: false
+
+    - name: Folder for drop-ins of the proxy unit
+      ansible.builtin.file:
+        path: /etc/systemd/system/proxy.service.d
+        state: directory
+        mode: "0755"
+
+    # Our unit runs as deploy, so the server needs its pid file, logs and temp folders writable by
+    # deploy: ExecStartPre's "+" runs that as root. Servers warn that their `user` setting is ignored.
+    - name: Make the proxy unit run the baseline (drop-in; deploy-proxy.yml removes it)
+      ansible.builtin.copy:
+        dest: /etc/systemd/system/proxy.service.d/baseline.conf
+        content: |
+          # {{ baseline }}, written by deploy-baseline.yml
+          [Service]
+          {% for line in unit_environment | default([]) %}
+          Environment={{ line }}
+          {% endfor %}
+          ExecStartPre=+/bin/sh -c '{{ prepare }}'
+          ExecStart=
+          ExecStart={{ exec_start }}
+
+    - name: Restart the proxy unit
+      ansible.builtin.systemd:
+        name: proxy
+        state: restarted
+        daemon_reload: true
+
+    - name: Wait until /health answers through the baseline
+      ansible.builtin.uri:
+        url: http://127.0.0.1/health
+      register: health
+      until: health.status == 200
+      retries: 20
+      delay: 1
+
+    - name: Show what runs on port 80
+      ansible.builtin.command: ss -ltnp 'sport = :80'
+      register: listener
+      changed_when: false
+
+    - name: Running
+      ansible.builtin.debug:
+        msg: "{{ [baseline + ' is the proxy under test'] + listener.stdout_lines }}"

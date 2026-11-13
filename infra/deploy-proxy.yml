@@ -35,6 +35,11 @@
         group: deploy
         mode: "0755"
 
+    - name: Remove a baseline drop-in (deploy-baseline.yml), so the unit runs our binary again
+      ansible.builtin.file:
+        path: /etc/systemd/system/proxy.service.d/baseline.conf
+        state: absent
+
     - name: Restart the proxy
       ansible.builtin.systemd:
         name: proxy

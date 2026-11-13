@@ -1,0 +1,21 @@
+# Caddy, stock: the Caddyfile from the plan, `:80 { reverse_proxy <backend>:3000 }`, nothing else.
+# Ubuntu 24.04's caddy package (universe) is 2.6.x; the plan wants the latest stable Caddy pinned,
+# which would mean Caddy's own apt repository instead. Decide before running.
+packages: [caddy]
+package_unit: caddy
+
+files:
+  - dest: /etc/caddy/Caddyfile
+    content: |
+      :80 {
+          reverse_proxy {{ backend_ip }}:3000
+      }
+
+check: caddy validate --config /etc/caddy/Caddyfile --adapter caddyfile
+
+# Caddy keeps its state (autosaved config, certificates) under XDG folders; give it one deploy owns.
+unit_environment:
+  - XDG_DATA_HOME=/var/lib/caddy-rp
+  - XDG_CONFIG_HOME=/var/lib/caddy-rp
+prepare: install -d -o deploy /var/lib/caddy-rp
+exec_start: /usr/bin/caddy run --config /etc/caddy/Caddyfile --adapter caddyfile

@@ -1,0 +1,23 @@
+# nginx, stock: Ubuntu 24.04's nginx.conf unchanged (1 worker, worker_connections 768, access log on),
+# plus one server that sends / to the backend in place of the default site.
+packages: [nginx]
+package_unit: nginx
+
+remove:
+  - /etc/nginx/sites-enabled/default
+
+files:
+  - dest: /etc/nginx/sites-available/rp-baseline
+    content: |
+      server {
+          listen 80 default_server;
+          location / { proxy_pass http://{{ backend_ip }}:3000; }
+      }
+
+links:
+  - { src: /etc/nginx/sites-available/rp-baseline, dest: /etc/nginx/sites-enabled/rp-baseline }
+
+check: nginx -t
+
+prepare: install -o deploy -m 644 /dev/null /run/nginx.pid && chown -R deploy /var/log/nginx /var/lib/nginx
+exec_start: /usr/sbin/nginx -g 'daemon off;'
