@@ -98,7 +98,7 @@
       "gridPos": {
         "x": 0,
         "y": 1,
-        "w": 4,
+        "w": 3,
         "h": 4
       },
       "targets": [
@@ -162,9 +162,9 @@
         "uid": "prometheus"
       },
       "gridPos": {
-        "x": 4,
+        "x": 3,
         "y": 1,
-        "w": 4,
+        "w": 3,
         "h": 4
       },
       "targets": [
@@ -250,9 +250,9 @@
         "uid": "prometheus"
       },
       "gridPos": {
-        "x": 8,
+        "x": 6,
         "y": 1,
-        "w": 4,
+        "w": 3,
         "h": 4
       },
       "targets": [
@@ -330,74 +330,6 @@
     },
     {
       "type": "stat",
-      "id": 204,
-      "title": "Stopped by",
-      "description": "What went wrong on the last failed probe: the step just above the score.",
-      "datasource": {
-        "type": "prometheus",
-        "uid": "prometheus"
-      },
-      "gridPos": {
-        "x": 12,
-        "y": 1,
-        "w": 6,
-        "h": 4
-      },
-      "targets": [
-        {
-          "refId": "A",
-          "datasource": {
-            "type": "prometheus",
-            "uid": "prometheus"
-          },
-          "expr": "topk(1, last_over_time(capacity_probe_result{verdict!=\"pass\"}[$__range]))",
-          "legendFormat": "{{proxy}} at {{users}} users",
-          "instant": true,
-          "range": false
-        }
-      ],
-      "fieldConfig": {
-        "defaults": {
-          "unit": "none",
-          "noValue": "–",
-          "color": {
-            "mode": "fixed",
-            "fixedColor": "red"
-          },
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "red",
-                "value": null
-              }
-            ]
-          }
-        },
-        "overrides": []
-      },
-      "options": {
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
-          "fields": "",
-          "values": false
-        },
-        "colorMode": "value",
-        "graphMode": "none",
-        "textMode": "name",
-        "justifyMode": "auto",
-        "orientation": "auto",
-        "wideLayout": true,
-        "showPercentChange": false,
-        "text": {
-          "valueSize": 30
-        }
-      }
-    },
-    {
-      "type": "stat",
       "id": 207,
       "title": "Peak req/s",
       "description": "Highest 5 s rate of successful requests in the run.",
@@ -406,9 +338,9 @@
         "uid": "prometheus"
       },
       "gridPos": {
-        "x": 0,
-        "y": 5,
-        "w": 6,
+        "x": 9,
+        "y": 1,
+        "w": 3,
         "h": 4
       },
       "targets": [
@@ -464,6 +396,74 @@
     },
     {
       "type": "stat",
+      "id": 204,
+      "title": "Stopped by",
+      "description": "What went wrong on the last failed probe: the step just above the score.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 5,
+        "w": 6,
+        "h": 4
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "topk(1, last_over_time(capacity_probe_result{verdict!=\"pass\"}[$__range]))",
+          "legendFormat": "{{proxy}} at {{users}} users",
+          "instant": true,
+          "range": false
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none",
+          "noValue": "–",
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "red"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "red",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "value",
+        "graphMode": "none",
+        "textMode": "name",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "wideLayout": true,
+        "showPercentChange": false,
+        "text": {
+          "valueSize": 26
+        }
+      }
+    },
+    {
+      "type": "stat",
       "id": 205,
       "title": "Peak proxy RSS",
       "description": "Most memory the proxy process used in the run. The box has 2 GB; the kernel kills the proxy near that.",
@@ -474,7 +474,7 @@
       "gridPos": {
         "x": 6,
         "y": 5,
-        "w": 6,
+        "w": 3,
         "h": 4
       },
       "targets": [
@@ -537,16 +537,16 @@
     {
       "type": "stat",
       "id": 206,
-      "title": "CPU per request (median)",
+      "title": "CPU / request",
       "description": "Median µs of proxy-box CPU per successful request (ignores moments under 100 req/s). Lower = more efficient.",
       "datasource": {
         "type": "prometheus",
         "uid": "prometheus"
       },
       "gridPos": {
-        "x": 12,
+        "x": 9,
         "y": 5,
-        "w": 6,
+        "w": 3,
         "h": 4
       },
       "targets": [
@@ -598,6 +598,89 @@
         "orientation": "auto",
         "wideLayout": true,
         "showPercentChange": false
+      }
+    },
+    {
+      "type": "barchart",
+      "id": 210,
+      "title": "Score per version",
+      "description": "Users held by every saved run, in version order: the ladder. Ignores the time picker.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "gridPos": {
+        "x": 12,
+        "y": 1,
+        "w": 6,
+        "h": 8
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "max by (entry) (last_over_time(capacity_score_users[100y] @ 4102444800))",
+          "instant": true,
+          "range": false,
+          "format": "table"
+        }
+      ],
+      "transformations": [
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "Time": true
+            },
+            "renameByName": {
+              "entry": "version",
+              "Value": "users held"
+            }
+          }
+        },
+        {
+          "id": "sortBy",
+          "options": {
+            "sort": [
+              {
+                "field": "version"
+              }
+            ]
+          }
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "min": 0,
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "blue"
+          },
+          "custom": {
+            "fillOpacity": 80,
+            "gradientMode": "none",
+            "lineWidth": 1
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "orientation": "vertical",
+        "xField": "version",
+        "showValue": "always",
+        "barWidth": 0.7,
+        "groupWidth": 0.7,
+        "legend": {
+          "showLegend": false
+        },
+        "tooltip": {
+          "mode": "single"
+        },
+        "xTickLabelRotation": 0
       }
     },
     {
@@ -807,91 +890,6 @@
       }
     },
     {
-      "type": "barchart",
-      "id": 210,
-      "title": "Score per version",
-      "description": "Users held by every saved run, best first. Doesn't care about the time picker.",
-      "datasource": {
-        "type": "prometheus",
-        "uid": "prometheus"
-      },
-      "gridPos": {
-        "x": 0,
-        "y": 9,
-        "w": 24,
-        "h": 6
-      },
-      "targets": [
-        {
-          "refId": "A",
-          "datasource": {
-            "type": "prometheus",
-            "uid": "prometheus"
-          },
-          "expr": "max by (entry) (last_over_time(capacity_score_users[100y] @ 4102444800))",
-          "instant": true,
-          "range": false,
-          "format": "table"
-        }
-      ],
-      "transformations": [
-        {
-          "id": "organize",
-          "options": {
-            "excludeByName": {
-              "Time": true
-            },
-            "renameByName": {
-              "entry": "version",
-              "Value": "users held"
-            }
-          }
-        },
-        {
-          "id": "sortBy",
-          "options": {
-            "sort": [
-              {
-                "field": "users held",
-                "desc": true
-              }
-            ]
-          }
-        }
-      ],
-      "fieldConfig": {
-        "defaults": {
-          "unit": "locale",
-          "decimals": 0,
-          "min": 0,
-          "color": {
-            "mode": "fixed",
-            "fixedColor": "blue"
-          },
-          "custom": {
-            "fillOpacity": 80,
-            "gradientMode": "none",
-            "lineWidth": 1
-          }
-        },
-        "overrides": []
-      },
-      "options": {
-        "orientation": "horizontal",
-        "xField": "version",
-        "showValue": "always",
-        "barWidth": 0.7,
-        "groupWidth": 0.7,
-        "legend": {
-          "showLegend": false
-        },
-        "tooltip": {
-          "mode": "single"
-        },
-        "xTickLabelRotation": 0
-      }
-    },
-    {
       "type": "row",
       "id": 102,
       "title": "Load results (mload, every 5 s)",
@@ -901,7 +899,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 15
+        "y": 9
       }
     },
     {
@@ -916,7 +914,7 @@
         "h": 8,
         "w": 12,
         "x": 0,
-        "y": 16
+        "y": 10
       },
       "fieldConfig": {
         "defaults": {
@@ -1021,7 +1019,7 @@
         "h": 8,
         "w": 12,
         "x": 12,
-        "y": 16
+        "y": 10
       },
       "fieldConfig": {
         "defaults": {
@@ -1088,7 +1086,7 @@
         "h": 8,
         "w": 12,
         "x": 0,
-        "y": 24
+        "y": 18
       },
       "fieldConfig": {
         "defaults": {
@@ -1203,7 +1201,7 @@
         "h": 8,
         "w": 12,
         "x": 12,
-        "y": 24
+        "y": 18
       },
       "fieldConfig": {
         "defaults": {
@@ -1338,7 +1336,7 @@
         "h": 8,
         "w": 12,
         "x": 0,
-        "y": 32
+        "y": 26
       },
       "fieldConfig": {
         "defaults": {
@@ -1407,7 +1405,7 @@
         "h": 8,
         "w": 12,
         "x": 12,
-        "y": 32
+        "y": 26
       },
       "fieldConfig": {
         "defaults": {
@@ -1516,7 +1514,187 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 40
+        "y": 34
+      }
+    },
+    {
+      "type": "timeseries",
+      "id": 19,
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "title": "What ran out first: CPU or memory (% of the proxy box)",
+      "description": "CPU busy and memory used on the proxy box, both as % of what the box has, plus p95 latency (right axis). The line that reaches 100% first is the limit. In v0, CPU reaches 100%, requests pile up (p95 climbs), and memory follows until the kernel kills the proxy.",
+      "gridPos": {
+        "x": 0,
+        "y": 35,
+        "w": 24,
+        "h": 9
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "legendFormat": "CPU busy",
+          "expr": "100 * (1 - avg(rate(node_cpu_seconds_total{server=\"proxy\",mode=\"idle\"}[$__rate_interval])))"
+        },
+        {
+          "refId": "B",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "legendFormat": "memory used",
+          "expr": "100 * (1 - node_memory_MemAvailable_bytes{server=\"proxy\"} / node_memory_MemTotal_bytes{server=\"proxy\"})"
+        },
+        {
+          "refId": "C",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "legendFormat": "p95 latency",
+          "expr": "max(mload_p95_ms)"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "min": 0,
+          "max": 100,
+          "custom": {
+            "lineWidth": 2,
+            "fillOpacity": 10,
+            "gradientMode": "opacity",
+            "showPoints": "never",
+            "spanNulls": false,
+            "thresholdsStyle": {
+              "mode": "dashed"
+            }
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "transparent",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 100
+              }
+            ]
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byFrameRefID",
+              "options": "A"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "blue"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byFrameRefID",
+              "options": "B"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "purple"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byFrameRefID",
+              "options": "C"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "orange"
+                }
+              },
+              {
+                "id": "unit",
+                "value": "ms"
+              },
+              {
+                "id": "min",
+                "value": null
+              },
+              {
+                "id": "max",
+                "value": null
+              },
+              {
+                "id": "custom.axisPlacement",
+                "value": "right"
+              },
+              {
+                "id": "custom.scaleDistribution",
+                "value": {
+                  "type": "log",
+                  "log": 10
+                }
+              },
+              {
+                "id": "custom.fillOpacity",
+                "value": 0
+              },
+              {
+                "id": "custom.lineWidth",
+                "value": 1
+              },
+              {
+                "id": "custom.lineStyle",
+                "value": {
+                  "fill": "dash",
+                  "dash": [
+                    6,
+                    4
+                  ]
+                }
+              },
+              {
+                "id": "custom.thresholdsStyle",
+                "value": {
+                  "mode": "off"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "none"
+        }
       }
     },
     {
@@ -1532,7 +1710,7 @@
         "h": 8,
         "w": 12,
         "x": 0,
-        "y": 41
+        "y": 44
       },
       "fieldConfig": {
         "defaults": {
@@ -1693,7 +1871,7 @@
         "h": 8,
         "w": 12,
         "x": 12,
-        "y": 41
+        "y": 44
       },
       "fieldConfig": {
         "defaults": {
@@ -1829,7 +2007,7 @@
         "h": 8,
         "w": 12,
         "x": 0,
-        "y": 49
+        "y": 52
       },
       "fieldConfig": {
         "defaults": {
@@ -1936,7 +2114,7 @@
         "h": 8,
         "w": 12,
         "x": 12,
-        "y": 49
+        "y": 52
       },
       "fieldConfig": {
         "defaults": {
@@ -2026,7 +2204,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 57
+        "y": 60
       }
     },
     {
@@ -2042,7 +2220,7 @@
         "h": 8,
         "w": 12,
         "x": 0,
-        "y": 58
+        "y": 61
       },
       "fieldConfig": {
         "defaults": {
@@ -2208,7 +2386,7 @@
         "h": 8,
         "w": 12,
         "x": 12,
-        "y": 58
+        "y": 61
       },
       "fieldConfig": {
         "defaults": {
@@ -2278,7 +2456,7 @@
         "h": 8,
         "w": 12,
         "x": 0,
-        "y": 66
+        "y": 69
       },
       "fieldConfig": {
         "defaults": {
@@ -2394,7 +2572,7 @@
         "h": 8,
         "w": 12,
         "x": 12,
-        "y": 66
+        "y": 69
       },
       "fieldConfig": {
         "defaults": {
@@ -2492,7 +2670,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 74
+        "y": 77
       }
     },
     {
@@ -2508,7 +2686,7 @@
         "h": 8,
         "w": 12,
         "x": 0,
-        "y": 75
+        "y": 78
       },
       "fieldConfig": {
         "defaults": {
@@ -2666,7 +2844,7 @@
         "h": 8,
         "w": 12,
         "x": 12,
-        "y": 75
+        "y": 78
       },
       "fieldConfig": {
         "defaults": {
@@ -2808,7 +2986,7 @@
         "h": 8,
         "w": 12,
         "x": 0,
-        "y": 83
+        "y": 86
       },
       "fieldConfig": {
         "defaults": {
@@ -2902,7 +3080,7 @@
         "h": 8,
         "w": 12,
         "x": 12,
-        "y": 83
+        "y": 86
       },
       "fieldConfig": {
         "defaults": {
@@ -2968,7 +3146,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 91
+        "y": 94
       }
     },
     {
@@ -2984,7 +3162,7 @@
         "h": 8,
         "w": 12,
         "x": 0,
-        "y": 92
+        "y": 95
       },
       "fieldConfig": {
         "defaults": {
@@ -3101,7 +3279,7 @@
         "h": 8,
         "w": 12,
         "x": 12,
-        "y": 92
+        "y": 95
       },
       "fieldConfig": {
         "defaults": {
