@@ -47,6 +47,10 @@ var proxyAddress string
 // What is being tested (-entry), and where the results go: results/<entry>.
 var entry, outputDir string
 
+// proxyMetrics (-proxy-metrics) is false for baselines without our /metrics endpoint: then the run
+// doesn't wait for it, and the proxy RAM column stays 0 (CPU, box memory and sockets still work).
+var proxyMetrics bool
+
 // When the run started recording (after Prometheus was wiped).
 var runStart time.Time
 
@@ -100,6 +104,7 @@ func main() {
 	flag.StringVar(&backendServer, "backend", "rp-backend", "backend server (SSH host name)")
 	flag.StringVar(&loadgenServer, "loadgen", "rp-loadgen", "load generator (SSH host name)")
 	flag.StringVar(&entry, "entry", "", "what is being tested, e.g. v0, v1, nginx-stock (required)")
+	flag.BoolVar(&proxyMetrics, "proxy-metrics", true, "the proxy serves /metrics (our Go proxy); false for baselines (nginx, Caddy)")
 	flag.Parse()
 	if entry == "" || strings.ContainsAny(entry, "/ \"'") {
 		log.Fatal("-entry is required, e.g. -entry v0")
@@ -464,7 +469,10 @@ var serverQueries = map[string]string{
 // and stops the test if it doesn't: without it, the probes would have no CPU or memory numbers.
 func checkPrometheus() {
 	log.Print("waiting until Prometheus collects from all servers")
-	targets := []string{"node/proxy", "node/backend", "node-loadgen/loadgen", "proxy/proxy"}
+	targets := []string{"node/proxy", "node/backend", "node-loadgen/loadgen"}
+	if proxyMetrics {
+		targets = append(targets, "proxy/proxy")
+	}
 	var missing string
 	for attempt := 0; attempt < 30; attempt++ {
 		time.Sleep(2 * time.Second)
