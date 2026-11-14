@@ -346,9 +346,11 @@ func resetBackend() {
 func restartProxy() {
 	mustOnServer(proxyServer, "systemctl restart proxy")
 
-	// Wait until the proxy answers (any HTTP answer means it's listening).
+	// Wait until the proxy answers (any HTTP answer means it's listening). Each try has a timeout:
+	// a request sent during the restart can hang forever without one.
+	client := &http.Client{Timeout: 2 * time.Second}
 	for attempt := 0; attempt < 100; attempt++ {
-		response, err := http.Get("http://" + proxyAddress + "/health")
+		response, err := client.Get("http://" + proxyAddress + "/health")
 		if err == nil {
 			response.Body.Close()
 			return
