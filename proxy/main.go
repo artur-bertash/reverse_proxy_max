@@ -8,6 +8,7 @@ import (
 	"net/url"
 	"runtime/debug"
 	"strings"
+	"sync"
 )
 
 // limits the total amount of memory managed by go's runtime (check capacity as it runs with a flag there)
@@ -31,6 +32,13 @@ func newTransport() *http.Transport {
 	return t
 }
 
+var copyBuffers = sync.Pool{New: func() any { b := make([]byte, 32*1024); return &b }}
+
+type bufferPool struct{}
+
+func (bufferPool) Get() []byte  { return *copyBuffers.Get().(*[]byte) }
+func (bufferPool) Put(b []byte) { copyBuffers.Put(&b) }
+
 func main() {
 	fromAddr := flag.String("from", "127.0.0.1:9090", "proxy's listening address")
 	toAddr := flag.String("to", "127.0.0.1:3000", "the backend this proxy forwards to")
@@ -49,6 +57,7 @@ func main() {
 	target := parseToUrl(*toAddr)
 	proxy := httputil.NewSingleHostReverseProxy(target)
 	proxy.Transport = newTransport()
+	proxy.BufferPool = bufferPool{}
 	log.Println("Starting proxy server on", *fromAddr)
 	if err := http.ListenAndServe(*fromAddr, proxy); err != nil {
 		log.Fatal("ListenAndServer", err)
