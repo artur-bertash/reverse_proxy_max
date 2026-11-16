@@ -19,19 +19,19 @@ How many users can a reverse proxy written in Go handle on a 1 vCPU / 2 GB box, 
 ## Results
 
 <table><tr>
-<td width="50%"><img src="docs/score-per-version.png" alt="Score per version" width="100%"></td>
+<td width="62%"><img src="docs/score-per-version.png" alt="Score per version" width="100%"></td>
 <td>
 
 | version | change |
 |---|---|
 | nginx | stock |
 | caddy | stock |
-| v0 | `httputil.NewSingleHostReverseProxy` |
-| v1 | backend connection pool (Little's law) |
-| v2 | `GOMEMLIMIT` (no gain: memory traded for CPU) |
-| v3 | `BufferPool` for the 32 KB copy buffer |
-| v4 | own handler instead of ReverseProxy |
-| **v5** | **own epoll server, 2 processes** |
+| v0 | stock `ReverseProxy` |
+| v1 | backend conn pool |
+| v2 | `GOMEMLIMIT` (no gain) |
+| v3 | `BufferPool` |
+| v4 | own handler |
+| **v5** | **own epoll server** |
 
 </td>
 </tr></table>
