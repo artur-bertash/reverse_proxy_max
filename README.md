@@ -14,7 +14,7 @@ How many users can a reverse proxy written in Go handle on a 1 vCPU / 2 GB box, 
 - 1 vCPU Xeon 8260, 2 GB RAM
 - p95 < 500 ms, p99 < 1 s, errors < 1%
 
-**Answer: 72,500 virtual users** (v0 started at 32,000)
+**Answer: scroll to see my results ;)
 
 ## Results
 
