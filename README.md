@@ -3,7 +3,7 @@
 [![proxy-ci](https://github.com/artur-bertash/reverse_proxy_max/actions/workflows/proxy-ci.yml/badge.svg)](https://github.com/artur-bertash/reverse_proxy_max/actions/workflows/proxy-ci.yml)
 ![Go](https://img.shields.io/badge/Go-00ADD8?logo=go&logoColor=white) ![Prometheus](https://img.shields.io/badge/Prometheus-E6522C?logo=prometheus&logoColor=white) ![Grafana](https://img.shields.io/badge/Grafana-F46800?logo=grafana&logoColor=white) ![Ansible](https://img.shields.io/badge/Ansible-EE0000?logo=ansible&logoColor=white) ![Linux epoll](https://img.shields.io/badge/Linux_epoll-333333?logo=linux&logoColor=white) ![Docker](https://img.shields.io/badge/Docker-2496ED?logo=docker&logoColor=white)
 
-**[Live Grafana dashboard](https://web--grafana--8lskh6xd7t2n.code.run/d/proxy-capacity/proxy-capacity?from=2026-11-13T02:49:57.472Z&to=2026-11-13T03:32:26.873Z&timezone=browser&orgId=1)**
+**[Live Grafana dashboard](https://web--grafana--8lskh6xd7t2n.code.run/d/proxy-capacity/proxy-capacity?from=2026-11-09T22:13:54.354Z&to=2026-11-09T23:02:48.850Z&timezone=browser)**
 
 ![Grafana dashboard of the v5 capacity run](docs/grafana.gif)
 
