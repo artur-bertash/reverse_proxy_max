@@ -1,0 +1,17 @@
+{
+	"ulid": "01M7E2JHPR86Z4750BK75XRGAM",
+	"minTime": 1794691927282,
+	"maxTime": 1794695053731,
+	"stats": {
+		"numSamples": 1047724,
+		"numSeries": 1741,
+		"numChunks": 8704
+	},
+	"compaction": {
+		"level": 1,
+		"sources": [
+			"01M7E2JHPR86Z4750BK75XRGAM"
+		]
+	},
+	"version": 1
+}

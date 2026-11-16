@@ -24,7 +24,7 @@ func newTransport() *http.Transport {
 	t := http.DefaultTransport.(*http.Transport).Clone()
 	t.MaxIdleConns = 2450
 	t.MaxIdleConnsPerHost = 2450 // default 2: a new TCP connection on almost every request
-	return t
+	return t                     // all for backend btw not proxy
 }
 
 func main() {

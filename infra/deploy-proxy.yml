@@ -1,17 +1,19 @@
 # Builds the proxy on the laptop for Linux, copies it to the proxy server and restarts it.
 #
 #   cd infra && ansible-playbook deploy-proxy.yml
+#   cd infra && ansible-playbook deploy-proxy.yml -e src=../proxies_tested/v3   # an earlier version
 
 - name: Deploy the proxy
   hosts: proxy
   gather_facts: false
   vars:
     build: "{{ playbook_dir }}/.build/proxy" # gitignored
+    source_dir: "{{ (src | default('../proxy')) if (src | default('../proxy')).startswith('/') else playbook_dir + '/' + (src | default('../proxy')) }}"
   tasks:
-    - name: Build proxy/ for linux/amd64 (on the laptop)
+    - name: Build the proxy for linux/amd64 (on the laptop)
       ansible.builtin.shell: go build -o "{{ build }}" *.go
       args:
-        chdir: "{{ playbook_dir }}/../proxy"
+        chdir: "{{ source_dir }}"
       environment: { GOOS: linux, GOARCH: amd64, CGO_ENABLED: "0", GO111MODULE: "off" }
       delegate_to: localhost
       run_once: true
@@ -56,4 +58,4 @@
 
     - name: Deployed
       ansible.builtin.debug:
-        msg: "proxy {{ commit.stdout }} running, /health through it: {{ health.status }}"
+        msg: "proxy from {{ source_dir | basename }} ({{ commit.stdout }}) running, /health through it: {{ health.status }}"

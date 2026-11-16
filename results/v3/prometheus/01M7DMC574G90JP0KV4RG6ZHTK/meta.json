@@ -1,0 +1,17 @@
+{
+	"ulid": "01M7DMC574G90JP0KV4RG6ZHTK",
+	"minTime": 1794677437282,
+	"maxTime": 1794680165362,
+	"stats": {
+		"numSamples": 919174,
+		"numSeries": 1739,
+		"numChunks": 8532
+	},
+	"compaction": {
+		"level": 1,
+		"sources": [
+			"01M7DMC574G90JP0KV4RG6ZHTK"
+		]
+	},
+	"version": 1
+}

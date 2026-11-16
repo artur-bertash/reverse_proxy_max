@@ -31,18 +31,26 @@ import (
 const (
 	startUsers = 2500
 	minUsers   = 250
-	maxUsers   = 60000 // one load generator can open only ~60k connections to one IP and port
+	maxUsers   = 100000 // ~35k connections per proxy address before the load generator's connect() slows; 3 addresses
 	probeHold  = 2 * time.Minute
 	finalHold  = 5 * time.Minute
 	precision  = 0.05 // stop narrowing down when the range is within 5%
 	stepUsers  = 250  // user counts are rounded down to a multiple of this
 
-	maxLoadgenCPU = 70.0 // above this, the load generator may be the limit
+	maxLoadgenCPU     = 70.0 // above this on average, the load generator may be the limit
+	maxLoadgenCPUPeak = 90.0 // above this in any 10 s window, it was (short bursts hide in the average)
 )
 
 // all set by flags from ssg config
 var proxyServer, backendServer, loadgenServer string
 var proxyAddress string
+
+// mload's targets: the proxy's IPv4 and IPv6 address. With one destination (IP, port), the load
+// generator's kernel has to find a free source port among ~64k for each new connection; past ~35k
+// connections that search saturates all its cores during the ramp (seen with perf: connect() in
+// __inet_check_established). Two destinations give each its own ~64k ports. RULES.md §177 allows
+// extra IP addresses on the proxy box for exactly this.
+var proxyTargets string
 
 // What is being tested (-entry), and where the results go: results/<entry>.
 var entry, outputDir string
@@ -93,6 +101,7 @@ type Probe struct {
 	ProxyCPU      float64 // average % busy on the proxy server
 	ProxySteal    float64 // average % of CPU time taken by other VMs on the same host
 	LoadgenCPU    float64 // average % busy on the load generator
+	LoadgenPeak   float64 // highest % busy on the load generator in any 10 s window
 	ProxyMemoryMB int     // highest memory use of the proxy process
 	MaxSockets    int     // highest number of open TCP sockets on the proxy server (≈ connections)
 	MaxTimeWait   int     // highest number of TCP sockets in TIME_WAIT on the proxy server
@@ -118,6 +127,16 @@ func main() {
 		log.Fatal(err)
 	}
 	proxyAddress = addressOf(proxyServer)
+	// Every global address of the proxy box (IPv4 and IPv6): each one is a separate set of
+	// source ports for the load generator, ~35k connections before connect() slows down.
+	proxyTargets = proxyAddress
+	for _, address := range strings.Fields(mustOnServer(proxyServer,
+		`ip -o addr show scope global | awk '{print $4}' | cut -d/ -f1`)) {
+		if address != proxyAddress {
+			proxyTargets += "," + address
+		}
+	}
+	log.Printf("load spread over the proxy's addresses: %s", proxyTargets)
 
 	prepareServers()
 
@@ -268,7 +287,7 @@ func rampFor(users int) time.Duration {
 }
 
 func decideVerdict(probe Probe) Verdict {
-	if probe.LoadgenCPU > maxLoadgenCPU {
+	if probe.LoadgenCPU > maxLoadgenCPU || probe.LoadgenPeak > maxLoadgenCPUPeak {
 		return Invalid
 	}
 	for kind := range probe.Load.Errors {
@@ -366,7 +385,7 @@ func runMload(users int, ramp, hold time.Duration, label string) MloadResult {
 	command := fmt.Sprintf(
 		"rm -f /tmp/rp-mload.json %s/mload.prom; ulimit -n 1048576; mload -target %s -ports 80 -users %d -ramp %s -hold %s "+
 			"-think-scale 1 -tokens /opt/rp/tokens.json -out /tmp/rp-mload.json | mload-to-prom %s %s %d",
-		textfileDir, proxyAddress, users, ramp, hold, entry, label, users)
+		textfileDir, proxyTargets, users, ramp, hold, entry, label, users)
 	output, _ := onServer(loadgenServer, command)
 	appendFile("mload.txt", output)
 
@@ -459,12 +478,13 @@ func saveSnapshot() {
 // The numbers for each probe, as Prometheus queries over a probe's time window ($W).
 // The servers are told apart by the "server" label set in prometheus.yml.
 var serverQueries = map[string]string{
-	"proxy_cpu":   `100 * (1 - avg(rate(node_cpu_seconds_total{server="proxy",mode="idle"}[$W])))`,
-	"proxy_steal": `100 * avg(rate(node_cpu_seconds_total{server="proxy",mode="steal"}[$W]))`,
-	"loadgen_cpu": `100 * (1 - avg(rate(node_cpu_seconds_total{server="loadgen",mode="idle"}[$W])))`,
-	"proxy_rss":   `max_over_time(process_resident_memory_bytes{job="proxy"}[$W])`,
-	"sockets":     `max_over_time(node_sockstat_TCP_alloc{server="proxy"}[$W])`,
-	"time_wait":   `max_over_time(node_sockstat_TCP_tw{server="proxy"}[$W])`,
+	"proxy_cpu":    `100 * (1 - avg(rate(node_cpu_seconds_total{server="proxy",mode="idle"}[$W])))`,
+	"proxy_steal":  `100 * avg(rate(node_cpu_seconds_total{server="proxy",mode="steal"}[$W]))`,
+	"loadgen_cpu":  `100 * (1 - avg(rate(node_cpu_seconds_total{server="loadgen",mode="idle"}[$W])))`,
+	"loadgen_peak": `max_over_time((100 * (1 - avg(rate(node_cpu_seconds_total{server="loadgen",mode="idle"}[10s]))))[$W:5s])`,
+	"proxy_rss":    `max_over_time(process_resident_memory_bytes{job="proxy"}[$W])`,
+	"sockets":      `max_over_time(node_sockstat_TCP_alloc{server="proxy"}[$W])`,
+	"time_wait":    `max_over_time(node_sockstat_TCP_tw{server="proxy"}[$W])`,
 }
 
 // checkPrometheus waits (up to a minute) until Prometheus collects from every server,
@@ -540,6 +560,7 @@ func readServerNumbers(probe *Probe, start, end time.Time) {
 	probe.ProxyCPU = number("proxy_cpu")
 	probe.ProxySteal = number("proxy_steal")
 	probe.LoadgenCPU = number("loadgen_cpu")
+	probe.LoadgenPeak = number("loadgen_peak")
 	probe.ProxyMemoryMB = int(number("proxy_rss") / (1 << 20))
 	probe.MaxSockets = int(number("sockets"))
 	probe.MaxTimeWait = int(number("time_wait"))
@@ -573,9 +594,9 @@ func shellQuote(text string) string {
 
 func logProbe(p Probe) {
 	log.Printf("  → %s (proxy %s): %.0f req/s, p95 %.1f ms, p99 %.1f ms, errors %.2f%%, proxy CPU %.0f%%, "+
-		"proxy RAM %d MB, sockets %d, TIME_WAIT %d, load generator CPU %.0f%% %s",
+		"proxy RAM %d MB, sockets %d, TIME_WAIT %d, load generator CPU %.0f%% (peak %.0f%%) %s",
 		p.Verdict, p.ProxyState, p.Load.RequestsPerSecond, p.Load.P95ms, p.Load.P99ms, p.Load.ErrorPercent,
-		p.ProxyCPU, p.ProxyMemoryMB, p.MaxSockets, p.MaxTimeWait, p.LoadgenCPU, errorKinds(p))
+		p.ProxyCPU, p.ProxyMemoryMB, p.MaxSockets, p.MaxTimeWait, p.LoadgenCPU, p.LoadgenPeak, errorKinds(p))
 }
 
 // shortErrorNames keeps the log line short.

@@ -74,16 +74,32 @@ func writeMetrics(w http.ResponseWriter) {
 		fmt.Fprintf(w, "# TYPE %s %s\n%s %g\n", name, kind, name, value)
 	}
 
-	// The same numbers the old monitor read from /proc: resident memory and open files.
-	var size, resident int64
-	if statm, err := os.ReadFile("/proc/self/statm"); err == nil {
-		fmt.Sscan(string(statm), &size, &resident)
-		fmt.Fprintf(w, "# TYPE process_resident_memory_bytes gauge\nprocess_resident_memory_bytes %d\n",
-			resident*int64(os.Getpagesize()))
+	// The same numbers the old monitor read from /proc: resident memory and open files, added up
+	// over this process and the workers it started (-procs), so they count as one proxy.
+	var totalResident int64
+	var totalFiles int
+	for _, dir := range procDirs() {
+		var size, resident int64
+		if statm, err := os.ReadFile(dir + "/statm"); err == nil {
+			fmt.Sscan(string(statm), &size, &resident)
+			totalResident += resident * int64(os.Getpagesize())
+		}
+		if files, err := os.ReadDir(dir + "/fd"); err == nil {
+			totalFiles += len(files)
+		}
 	}
-	if files, err := os.ReadDir("/proc/self/fd"); err == nil {
-		fmt.Fprintf(w, "# TYPE process_open_fds gauge\nprocess_open_fds %d\n", len(files))
+	fmt.Fprintf(w, "# TYPE process_resident_memory_bytes gauge\nprocess_resident_memory_bytes %d\n", totalResident)
+	fmt.Fprintf(w, "# TYPE process_open_fds gauge\nprocess_open_fds %d\n", totalFiles)
+	fmt.Fprintf(w, "# TYPE proxy_processes gauge\nproxy_processes %d\n", len(procDirs()))
+}
+
+// procDirs: /proc/self plus /proc/<pid> of every worker process.
+func procDirs() []string {
+	dirs := []string{"/proc/self"}
+	for _, pid := range workerPIDs {
+		dirs = append(dirs, fmt.Sprintf("/proc/%d", pid))
 	}
+	return dirs
 }
 
 // prometheusName turns "/gc/heap/allocs:bytes" into "go_gc_heap_allocs_bytes".

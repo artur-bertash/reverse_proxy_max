@@ -35,7 +35,7 @@
           "type": "prometheus",
           "uid": "prometheus"
         },
-        "expr": "mload_probe",
+        "expr": "label_replace(mload_probe, \"entry\", \"$1\", \"entry\", \"(.+)-stock\")",
         "step": "5s",
         "titleFormat": "{{entry}}: {{label}} {{users}} users",
         "tagKeys": "label"
@@ -622,7 +622,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "max by (entry) (last_over_time(capacity_score_users[100y] @ 4102444800))",
+          "expr": "label_replace(max by (entry) (last_over_time(capacity_score_users[100y] @ 4102444800)), \"entry\", \"$1\", \"entry\", \"(.+)-stock\")",
           "instant": true,
           "range": false,
           "format": "table"
@@ -706,7 +706,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "max by (entry) (last_over_time(capacity_run_start_ms[100y] @ 4102444800)) - 30000",
+          "expr": "label_replace(max by (entry) (last_over_time(capacity_run_start_ms[100y] @ 4102444800)) - 30000, \"entry\", \"$1\", \"entry\", \"(.+)-stock\")",
           "instant": true,
           "range": false,
           "format": "table"
@@ -717,7 +717,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "max by (entry) (last_over_time(capacity_run_end_ms[100y] @ 4102444800)) + 30000",
+          "expr": "label_replace(max by (entry) (last_over_time(capacity_run_end_ms[100y] @ 4102444800)) + 30000, \"entry\", \"$1\", \"entry\", \"(.+)-stock\")",
           "instant": true,
           "range": false,
           "format": "table"
@@ -728,7 +728,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "max by (entry) (last_over_time(capacity_run_start_ms[100y] @ 4102444800))",
+          "expr": "label_replace(max by (entry) (last_over_time(capacity_run_start_ms[100y] @ 4102444800)), \"entry\", \"$1\", \"entry\", \"(.+)-stock\")",
           "instant": true,
           "range": false,
           "format": "table"
@@ -739,7 +739,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "max by (entry) (last_over_time(capacity_run_end_ms[100y] @ 4102444800))",
+          "expr": "label_replace(max by (entry) (last_over_time(capacity_run_end_ms[100y] @ 4102444800)), \"entry\", \"$1\", \"entry\", \"(.+)-stock\")",
           "instant": true,
           "range": false,
           "format": "table"
@@ -966,7 +966,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "mload_users",
+          "expr": "label_replace(mload_users, \"entry\", \"$1\", \"entry\", \"(.+)-stock\")",
           "legendFormat": "{{entry}} users"
         },
         {
@@ -975,7 +975,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "mload_conns",
+          "expr": "label_replace(mload_conns, \"entry\", \"$1\", \"entry\", \"(.+)-stock\")",
           "legendFormat": "{{entry}} connections"
         }
       ],
@@ -1120,7 +1120,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "mload_rps",
+          "expr": "label_replace(mload_rps, \"entry\", \"$1\", \"entry\", \"(.+)-stock\")",
           "legendFormat": "{{entry}}"
         },
         {
@@ -1313,7 +1313,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "mload_p95_ms",
+          "expr": "label_replace(mload_p95_ms, \"entry\", \"$1\", \"entry\", \"(.+)-stock\")",
           "legendFormat": "{{entry}} p95"
         },
         {
@@ -1322,7 +1322,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "mload_p99_ms",
+          "expr": "label_replace(mload_p99_ms, \"entry\", \"$1\", \"entry\", \"(.+)-stock\")",
           "legendFormat": "{{entry}} p99"
         },
         {
@@ -1534,7 +1534,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "100 * mload_fails / clamp_min(mload_rps * 5 + mload_fails, 1)",
+          "expr": "label_replace(100 * mload_fails / clamp_min(mload_rps * 5 + mload_fails, 1), \"entry\", \"$1\", \"entry\", \"(.+)-stock\")",
           "legendFormat": "{{entry}} error %"
         },
         {
@@ -1543,7 +1543,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "mload_fails",
+          "expr": "label_replace(mload_fails, \"entry\", \"$1\", \"entry\", \"(.+)-stock\")",
           "legendFormat": "{{entry}} failed per 5 s"
         },
         {

@@ -1,0 +1,17 @@
+{
+	"ulid": "01M7EEBP57VK4RTRA9RS399GRA",
+	"minTime": 1794704692282,
+	"maxTime": 1794707412283,
+	"stats": {
+		"numSamples": 922463,
+		"numSeries": 1740,
+		"numChunks": 8512
+	},
+	"compaction": {
+		"level": 1,
+		"sources": [
+			"01M7EEBP57VK4RTRA9RS399GRA"
+		]
+	},
+	"version": 1
+}
