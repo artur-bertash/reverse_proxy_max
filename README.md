@@ -1,4 +1,4 @@
-# reverse_proxy_max
+# How hard can you abuse a reverse proxy?
 
 [![proxy-ci](https://github.com/artur-bertash/reverse_proxy_max/actions/workflows/proxy-ci.yml/badge.svg)](https://github.com/artur-bertash/reverse_proxy_max/actions/workflows/proxy-ci.yml)
 ![Go](https://img.shields.io/badge/Go-00ADD8?logo=go&logoColor=white) ![Prometheus](https://img.shields.io/badge/Prometheus-E6522C?logo=prometheus&logoColor=white) ![Grafana](https://img.shields.io/badge/Grafana-F46800?logo=grafana&logoColor=white) ![Ansible](https://img.shields.io/badge/Ansible-EE0000?logo=ansible&logoColor=white) ![Linux epoll](https://img.shields.io/badge/Linux_epoll-333333?logo=linux&logoColor=white) ![Docker](https://img.shields.io/badge/Docker-2496ED?logo=docker&logoColor=white)
